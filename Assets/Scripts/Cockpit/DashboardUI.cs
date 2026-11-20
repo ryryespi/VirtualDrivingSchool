@@ -61,7 +61,7 @@ namespace VirtualDrivingSchool.Cockpit
 
             // Background panel
             Rect panelRect = new Rect(x, y, clusterSize.x, clusterSize.y);
-            DrawRect(panelRect, new Color(0.06f, 0.07f, 0.09f, 0.90f));
+            DrawRect(panelRect, new Color(0.06f, 0.07f, 0.09f, 0.78f));
             DrawOutline(panelRect, new Color(0.2f, 0.25f, 0.3f, 0.8f), 2);
 
             // 1. GEAR DISPLAY (Center)

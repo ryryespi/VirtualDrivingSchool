@@ -4,6 +4,7 @@ using VirtualDrivingSchool.Cockpit;
 using VirtualDrivingSchool.Environment;
 using VirtualDrivingSchool.Input;
 using VirtualDrivingSchool.Lessons;
+using VirtualDrivingSchool.Rendering;
 using VirtualDrivingSchool.UI;
 using VirtualDrivingSchool.Vehicle;
 
@@ -23,6 +24,9 @@ namespace VirtualDrivingSchool
 
         private void Awake()
         {
+            // Low/High graphics presets (F10). Applied first so the camera/mirrors pick it up.
+            GraphicsQualityManager.Ensure();
+
             if (autoSetupLighting)
             {
                 SetupLighting();
@@ -86,6 +90,18 @@ namespace VirtualDrivingSchool
                 sun.intensity = 1.2f;
                 sun.shadows = LightShadows.Soft;
             }
+
+            // Sky + soft ambient (also stored in the scene; re-applied here for scenes built at runtime)
+            VdsArtLibrary lib = VdsArtLibrary.Get();
+            if (lib != null && lib.skybox != null && RenderSettings.skybox != lib.skybox)
+            {
+                RenderSettings.skybox = lib.skybox;
+                RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
+                RenderSettings.ambientSkyColor = new Color(0.62f, 0.70f, 0.82f);
+                RenderSettings.ambientEquatorColor = new Color(0.50f, 0.52f, 0.50f);
+                RenderSettings.ambientGroundColor = new Color(0.28f, 0.27f, 0.24f);
+            }
+            if (RenderSettings.sun == null) RenderSettings.sun = sun;
         }
 
         private ManualCarController SpawnCompleteVehicle(LogitechG920Manager input)
@@ -101,56 +117,8 @@ namespace VirtualDrivingSchool
             rb.angularDamping = 0.1f;
             rb.interpolation = RigidbodyInterpolation.Interpolate;
 
-            // Chassis Mesh
-            GameObject body = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            body.name = "Body_Mesh";
-            body.transform.SetParent(carObj.transform, false);
-            body.transform.localPosition = new Vector3(0f, 0.4f, 0f);
-            body.transform.localScale = new Vector3(1.85f, 0.7f, 4.3f);
-
-            GameObject cabin = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cabin.name = "Cabin_Mesh";
-            cabin.transform.SetParent(carObj.transform, false);
-            cabin.transform.localPosition = new Vector3(0f, 0.95f, -0.2f);
-            cabin.transform.localScale = new Vector3(1.5f, 0.6f, 2.2f);
-
-            Material carMat = new Material(Shader.Find("Standard"));
-            carMat.color = new Color(0.85f, 0.15f, 0.15f);
-            body.GetComponent<Renderer>().material = carMat;
-            cabin.GetComponent<Renderer>().material = carMat;
-
-            // Steering Wheel Mesh (syncs with G920)
-            GameObject wheelMesh = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            wheelMesh.name = "SteeringWheel_Mesh";
-            wheelMesh.transform.SetParent(carObj.transform, false);
-            wheelMesh.transform.localPosition = new Vector3(-0.4f, 0.85f, 0.45f);
-            wheelMesh.transform.localRotation = Quaternion.Euler(65f, 0f, 0f);
-            wheelMesh.transform.localScale = new Vector3(0.38f, 0.04f, 0.38f);
-            Destroy(wheelMesh.GetComponent<Collider>());
-
-            // Interior Rear View Mirror
-            GameObject mirrorCenter = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            mirrorCenter.name = "Mirror_InteriorCenter";
-            mirrorCenter.transform.SetParent(carObj.transform, false);
-            mirrorCenter.transform.localPosition = new Vector3(0f, 1.15f, 0.5f);
-            mirrorCenter.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
-            mirrorCenter.transform.localScale = new Vector3(0.25f, 0.08f, 0.02f);
-            Destroy(mirrorCenter.GetComponent<Collider>());
-            MirrorCamera mirrorCamComp = mirrorCenter.AddComponent<MirrorCamera>();
-            mirrorCamComp.mirrorType = MirrorCamera.MirrorType.InteriorRearView;
-            mirrorCamComp.mirrorGlassRenderer = mirrorCenter.GetComponent<Renderer>();
-
-            // Driver-side Left Mirror
-            GameObject mirrorLeft = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            mirrorLeft.name = "Mirror_DriverLeft";
-            mirrorLeft.transform.SetParent(carObj.transform, false);
-            mirrorLeft.transform.localPosition = new Vector3(-1.0f, 0.85f, 0.7f);
-            mirrorLeft.transform.localRotation = Quaternion.Euler(0f, 175f, 0f);
-            mirrorLeft.transform.localScale = new Vector3(0.18f, 0.10f, 0.03f);
-            Destroy(mirrorLeft.GetComponent<Collider>());
-            MirrorCamera mirrorLeftComp = mirrorLeft.AddComponent<MirrorCamera>();
-            mirrorLeftComp.mirrorType = MirrorCamera.MirrorType.DriverSideLeft;
-            mirrorLeftComp.mirrorGlassRenderer = mirrorLeft.GetComponent<Renderer>();
+            // Visual shell: low-poly body, cockpit interior, steering wheel, mirrors (+ the same physics colliders as before)
+            CarVisualBuilder.BuildBodyAndCockpit(carObj, input);
 
             // Axles
             WheelAxle frontAxle = CreateAxle(carObj, "Front", 1.3f, 0.82f, true, true);
@@ -205,14 +173,9 @@ namespace VirtualDrivingSchool
             spr.targetPosition = 0.5f;
             leftCol.suspensionSpring = spr;
 
-            GameObject leftVisual = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            leftVisual.name = "Mesh";
-            leftVisual.transform.SetParent(leftObj.transform, false);
-            leftVisual.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
-            leftVisual.transform.localScale = new Vector3(0.7f, 0.12f, 0.7f);
-            Destroy(leftVisual.GetComponent<Collider>());
+            Transform leftVisual = CarVisualBuilder.CreateWheelVisual(leftObj.transform, true, 0.35f);
             axle.leftWheel = leftCol;
-            axle.leftVisualMesh = leftVisual.transform;
+            axle.leftVisualMesh = leftVisual;
 
             // Right
             GameObject rightObj = new GameObject($"Wheel_{name}_Right");
@@ -223,14 +186,9 @@ namespace VirtualDrivingSchool
             rightCol.suspensionDistance = 0.18f;
             rightCol.suspensionSpring = spr;
 
-            GameObject rightVisual = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            rightVisual.name = "Mesh";
-            rightVisual.transform.SetParent(rightObj.transform, false);
-            rightVisual.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
-            rightVisual.transform.localScale = new Vector3(0.7f, 0.12f, 0.7f);
-            Destroy(rightVisual.GetComponent<Collider>());
+            Transform rightVisual = CarVisualBuilder.CreateWheelVisual(rightObj.transform, false, 0.35f);
             axle.rightWheel = rightCol;
-            axle.rightVisualMesh = rightVisual.transform;
+            axle.rightVisualMesh = rightVisual;
 
             return axle;
         }
@@ -247,11 +205,11 @@ namespace VirtualDrivingSchool
 
             GameObject driverHead = new GameObject("Anchor_DriverHead");
             driverHead.transform.SetParent(car.transform, false);
-            driverHead.transform.localPosition = new Vector3(-0.4f, 1.05f, 0.05f);
+            driverHead.transform.localPosition = new Vector3(-0.4f, 1.08f, -0.22f); // seat position: ~0.65 m behind the steering wheel
 
             GameObject chaseAnchor = new GameObject("Anchor_Chase");
             chaseAnchor.transform.SetParent(car.transform, false);
-            chaseAnchor.transform.localPosition = new Vector3(0f, 2.2f, -5.5f);
+            chaseAnchor.transform.localPosition = new Vector3(0f, 2.4f, -7f); // a little further back for the 4.5 m body
 
             GameObject hoodAnchor = new GameObject("Anchor_Hood");
             hoodAnchor.transform.SetParent(car.transform, false);
