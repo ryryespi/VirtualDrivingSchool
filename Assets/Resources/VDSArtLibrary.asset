@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f5d61607343db1e428c4f31867687328, type: 3}
+  m_Name: VDSArtLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::VirtualDrivingSchool.Rendering.VdsArtLibrary
+  playerCarBody: {fileID: 919132149155446097, guid: 5decbd9983246f640a08651b590c7628, type: 3}
+  wheel: {fileID: 919132149155446097, guid: 57ed6db70a01aac48b51dbcefd4f9eb5, type: 3}
+  parkedCars:
+  - {fileID: 919132149155446097, guid: 9e046c1acba6fe942bd4a2de5f69889d, type: 3}
+  - {fileID: 919132149155446097, guid: ae1a15dc8d225504082342c3fb80ae60, type: 3}
+  - {fileID: 919132149155446097, guid: b2aedc4829417b847a18e16269dbc743, type: 3}
+  - {fileID: 919132149155446097, guid: 0d02cf85e3bffe44e8e97df1ab74b2b0, type: 3}
+  - {fileID: 919132149155446097, guid: 9084196b86727974fa8dfeff17d62a7b, type: 3}
+  - {fileID: 919132149155446097, guid: 096e54c988f76e14ca9bdabc9fdba136, type: 3}
+  cone: {fileID: 919132149155446097, guid: 80a15d7a4c097c04890966945b305f8a, type: 3}
+  stopSign: {fileID: 919132149155446097, guid: 537d10ccb6e7fcb49bf407926598354d, type: 3}
+  streetLight: {fileID: 919132149155446097, guid: 2741bd47f56cfb8488767875f560dd27, type: 3}
+  barrier: {fileID: 919132149155446097, guid: 5944bba51feedad4b80ca8252e1a45dc, type: 3}
+  trafficLight: {fileID: 919132149155446097, guid: 7576cb9b66e5bdf449289bfcc5efce2a, type: 3}
+  houses:
+  - {fileID: 919132149155446097, guid: 66a8440d1f9301a4fad4de5cd0915ae8, type: 3}
+  - {fileID: 919132149155446097, guid: a82803468ef19324f869e417e7389d67, type: 3}
+  - {fileID: 919132149155446097, guid: e5e18236e17cf75459b3a145fd857a33, type: 3}
+  - {fileID: 919132149155446097, guid: 3f3f6e97c8adba24986dcc52e06d8adf, type: 3}
+  - {fileID: 919132149155446097, guid: 79fc556014118554e9efa78bb3633d1f, type: 3}
+  fence: {fileID: 919132149155446097, guid: 5bf83aac42645cb48b144f4a577860b0, type: 3}
+  trees:
+  - {fileID: 919132149155446097, guid: 3d8c23c935408a24ba816f14b8e1d73a, type: 3}
+  - {fileID: 919132149155446097, guid: 918e8ee344a7cf54ba9f3efc7cb141a7, type: 3}
+  - {fileID: 919132149155446097, guid: 1b2e80d15b4dbd8438eb0bf6e2d91ebd, type: 3}
+  - {fileID: 919132149155446097, guid: c8850c71396fed443a7c8be65c9be614, type: 3}
+  - {fileID: 919132149155446097, guid: cac6a99798d5bde499a7bc0b50e36177, type: 3}
+  - {fileID: 919132149155446097, guid: 301270435b6efd54daf501a1a81cf72e, type: 3}
+  bushes:
+  - {fileID: 919132149155446097, guid: 482b9312b5615d045831f08caa5bc427, type: 3}
+  - {fileID: 919132149155446097, guid: 55189e1fd98f1734a9ef336aff966b85, type: 3}
+  - {fileID: 919132149155446097, guid: 128946707d98c8b4286b6dde72f7844d, type: 3}
+  - {fileID: 919132149155446097, guid: 766090a183fa3f243a9402c8ae0c3c3b, type: 3}
+  rocks:
+  - {fileID: 919132149155446097, guid: 6b9bf8b2aa438ff4790b1a5d939c5217, type: 3}
+  grass: {fileID: 2100000, guid: a19dc957ea8ad9148b82c237f6801276, type: 2}
+  lotAsphalt: {fileID: 2100000, guid: 04e1d9df760ce484fb05b4fcc8d836af, type: 2}
+  roadAsphalt: {fileID: 2100000, guid: c23474a7e369fab4f918d4fa9fce89e4, type: 2}
+  concrete: {fileID: 2100000, guid: da2dd88bda82230469848a0948504983, type: 2}
+  lineWhite: {fileID: 2100000, guid: 56034066e0205374187be5ce14f25b94, type: 2}
+  lineYellow: {fileID: 2100000, guid: 2959fe5faba330549875bd56210c5f8a, type: 2}
+  interiorDark: {fileID: 2100000, guid: 60d310ebdca84a64dbd7291b68d7ccb2, type: 2}
+  interiorTrim: {fileID: 2100000, guid: d93fb9688701b10469600d2db4a9829f, type: 2}
+  mirrorGlass: {fileID: 2100000, guid: edb56ab82fd72c84f83cc2663ce46de3, type: 2}
+  signRed: {fileID: 2100000, guid: 7641abe10418f704bb91f5e263b69b6e, type: 2}
+  fallbackPaint: {fileID: 2100000, guid: 03a8bb2e69534544ba5a10a5ed434212, type: 2}
+  skybox: {fileID: 2100000, guid: 54778a7c588413540ad7590b2b579203, type: 2}
+  highQualityProfile: {fileID: 11400000, guid: 29a2f720aca82e24fa7ff6ad2ac23c8a, type: 2}

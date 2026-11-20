@@ -99,7 +99,7 @@ namespace VirtualDrivingSchool.Editor
             cabinVisual.transform.localScale = new Vector3(1.5f, 0.6f, 2.2f);
 
             // Materials
-            Material carPaintMat = new Material(Shader.Find("Standard"));
+            Material carPaintMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
             carPaintMat.color = new Color(0.85f, 0.15f, 0.15f); // Cherry Red
             bodyVisual.GetComponent<Renderer>().material = carPaintMat;
             cabinVisual.GetComponent<Renderer>().material = carPaintMat;
