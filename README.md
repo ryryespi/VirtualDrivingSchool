@@ -26,6 +26,16 @@ A realistic 3D virtual driving simulation built for Unity, designed to teach man
 
 ---
 
+## 🛞 Connecting a Logitech Wheel & Pedals
+
+1. Install **Logitech G HUB** so Windows sees the G920/G923/G29 as a wheel, then plug the wheel and pedals in **before** pressing Play.
+2. The first time a wheel is detected, an on-screen **Wheel & Pedal Setup** opens: center the wheel and press Enter (or A), turn fully left, fully right, then press and release gas, brake and clutch (Space skips the clutch). Each step advances after holding about a second.
+3. The calibration is saved on that computer. Press **F9** any time to recalibrate, Esc to cancel.
+4. Gears: the H-shifter is used as soon as you move it; the paddles (RB up, LB down) shift sequentially and take over again when pressed.
+5. No wheel? The keyboard controls below work automatically.
+
+---
+
 ## ⌨️ Keyboard & Mouse Fallback Controls
 
 You can also practice immediately without a steering wheel plugged in:

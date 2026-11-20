@@ -52,6 +52,13 @@ namespace VirtualDrivingSchool.Input
         public bool LookBehind { get; private set; }
         public bool ResetVehicle { get; private set; }
 
+        // Wheel calibration and gear state
+        private WheelCalibrationData calibration;
+        private int paddleGear = 0;
+        private bool hShifterUsed = false;
+        private bool prevDpadLeft, prevDpadRight, prevDpadDown;
+        private bool calibrationPrompted = false;
+
         // Keyboard manual transmission simulation
         private int keyboardGear = 0;
         private float simulatedClutch = 0f;
@@ -61,6 +68,8 @@ namespace VirtualDrivingSchool.Input
             if (Instance == null) Instance = this;
             else Destroy(gameObject);
 
+            calibration = WheelCalibrationData.Load();
+            if (GetComponent<WheelCalibrationWizard>() == null) gameObject.AddComponent<WheelCalibrationWizard>();
             CheckConnectedControllers();
         }
 
@@ -70,6 +79,19 @@ namespace VirtualDrivingSchool.Input
             if (Time.frameCount % 120 == 0)
             {
                 CheckConnectedControllers();
+            }
+
+            if (WheelCalibrationWizard.IsActive)
+            {
+                ClearInputs();
+                return;
+            }
+
+            if (logitechDetected && !forceKeyboardMode && !calibrationPrompted && (calibration == null || !calibration.calibrated))
+            {
+                calibrationPrompted = true;
+                OpenCalibration();
+                return;
             }
 
             if (logitechDetected && !forceKeyboardMode)
@@ -94,7 +116,7 @@ namespace VirtualDrivingSchool.Input
                 if (!string.IsNullOrEmpty(joy))
                 {
                     string lower = joy.ToLower();
-                    if (lower.Contains("g920") || lower.Contains("g29") || lower.Contains("logitech") || lower.Contains("wheel"))
+                    if (lower.Contains("g920") || lower.Contains("g923") || lower.Contains("g29") || lower.Contains("g27") || lower.Contains("logitech") || lower.Contains("driving force") || lower.Contains("wheel"))
                     {
                         logitechDetected = true;
                         detectedJoystickName = joy;
@@ -109,83 +131,93 @@ namespace VirtualDrivingSchool.Input
         }
 
         /// <summary>
-        /// Reads physical Logitech G920 hardware axes and buttons
+        /// Reads the physical wheel, pedals, shifter and buttons using the saved calibration.
         /// </summary>
         private void PollLogitechWheel()
         {
+            if (calibration == null) calibration = WheelCalibrationData.Load();
+
             // --- STEERING ---
-            // DirectInput Axis 1 (X axis)
-            float rawSteer = UnityEngine.Input.GetAxis("Horizontal");
+            float rawSteer = calibration.ReadSteering();
             if (Mathf.Abs(rawSteer) < steeringDeadzone) rawSteer = 0f;
-            else
-            {
-                // Non-linear response curve for smooth precision
-                float sign = Mathf.Sign(rawSteer);
-                rawSteer = sign * Mathf.Pow(Mathf.Abs(rawSteer), steeringLinearity);
-            }
+            else rawSteer = Mathf.Sign(rawSteer) * Mathf.Pow(Mathf.Abs(rawSteer), steeringLinearity);
             Steering = Mathf.Clamp(rawSteer, -1f, 1f);
 
-            // --- THROTTLE PEDAL ---
-            // DirectInput Axis 2 or Vertical or Axis 5
-            float rawThrottle = ReadPedalRaw("Throttle", "Vertical", 2);
-            Throttle = NormalizePedal(rawThrottle, invertThrottle);
+            // --- PEDALS (0 = foot off, 1 = floored) ---
+            Throttle = ApplyPedalDeadzone(calibration.throttle.Read());
+            Brake = ApplyPedalDeadzone(calibration.brake.Read());
+            Clutch = ApplyPedalDeadzone(calibration.clutch.Read());
 
-            // --- BRAKE PEDAL ---
-            // DirectInput Axis 3 / RotX
-            float rawBrake = ReadPedalRaw("Brake", "Fire2", 3);
-            Brake = NormalizePedal(rawBrake, invertBrake);
+            // --- GEARS: H-pattern shifter wins when used, otherwise paddles shift sequentially ---
+            int hGear = DetectHShifterGear();
+            bool anyShifterSlot = hGear != 0;
+            if (anyShifterSlot) hShifterUsed = true;
 
-            // --- CLUTCH PEDAL ---
-            // DirectInput Axis 4 / Axis 6
-            float rawClutch = ReadPedalRaw("Clutch", "Jump", 6);
-            Clutch = NormalizePedal(rawClutch, invertClutch);
+            if (UnityEngine.Input.GetKeyDown(KeyCode.JoystickButton4) || UnityEngine.Input.GetKeyDown(KeyCode.JoystickButton5))
+                hShifterUsed = false; // driver switched back to paddles
 
-            // --- H-PATTERN SHIFTER (Buttons 11 to 18) ---
-            SelectedGear = DetectHShifterGear();
+            if (hShifterUsed)
+            {
+                paddleGear = hGear;
+                SelectedGear = hGear; // stick in the middle = neutral
+            }
+            else
+            {
+                if (UnityEngine.Input.GetKeyDown(KeyCode.JoystickButton5) && paddleGear < 6) paddleGear++;
+                if (UnityEngine.Input.GetKeyDown(KeyCode.JoystickButton4) && paddleGear > -1) paddleGear--;
+                SelectedGear = paddleGear;
+            }
 
-            // --- BUTTON CONTROLS ---
-            // G920 Buttons:
-            // A (Button 0) = Handbrake
-            // B (Button 1) = Horn
-            // X (Button 2) = Starter Ignition
-            // Y (Button 3) = Change Camera View
-            // LB (Button 4) / RB (Button 5) = Paddle down/up
-            // Back/View (Button 6) = Reset
-            // Start/Menu (Button 7) = Pause
-            // D-Pad Left/Right = Turn signals
-            // D-Pad Down = Hazard lights
+            // --- BUTTONS ---
             Handbrake = UnityEngine.Input.GetKey(KeyCode.JoystickButton0) || UnityEngine.Input.GetKey(KeyCode.Space);
             Horn = UnityEngine.Input.GetKey(KeyCode.JoystickButton1) || UnityEngine.Input.GetKey(KeyCode.F);
             StarterIgnition = UnityEngine.Input.GetKey(KeyCode.JoystickButton2) || UnityEngine.Input.GetKey(KeyCode.E);
             ChangeCameraView = UnityEngine.Input.GetKeyDown(KeyCode.JoystickButton3) || UnityEngine.Input.GetKeyDown(KeyCode.C);
             ResetVehicle = UnityEngine.Input.GetKeyDown(KeyCode.JoystickButton6) || UnityEngine.Input.GetKeyDown(KeyCode.R);
 
-            // Sequential Paddle Shifting fallback if no H-shifter
-            if (SelectedGear == 0)
-            {
-                if (UnityEngine.Input.GetKeyDown(KeyCode.JoystickButton5)) // RB = Upshift
-                {
-                    if (SelectedGear < 6) SelectedGear++;
-                }
-                else if (UnityEngine.Input.GetKeyDown(KeyCode.JoystickButton4)) // LB = Downshift
-                {
-                    if (SelectedGear > -1) SelectedGear--;
-                }
-            }
+            // --- D-PAD (edge-triggered so a held press toggles a signal once) ---
+            float dpadX = SafeAxisRaw("DpadX");
+            float dpadY = SafeAxisRaw("DpadY");
+            bool left = dpadX < -0.5f, right = dpadX > 0.5f, down = dpadY < -0.5f;
 
-            // D-Pad for looking around and turn signals
-            float dpadX = UnityEngine.Input.GetAxisRaw("DpadX");
-            float dpadY = UnityEngine.Input.GetAxisRaw("DpadY");
+            TurnSignalLeft = (left && !prevDpadLeft) || UnityEngine.Input.GetKeyDown(KeyCode.LeftBracket);
+            TurnSignalRight = (right && !prevDpadRight) || UnityEngine.Input.GetKeyDown(KeyCode.RightBracket);
+            HazardLights = (down && !prevDpadDown) || UnityEngine.Input.GetKeyDown(KeyCode.H);
+            prevDpadLeft = left; prevDpadRight = right; prevDpadDown = down;
 
-            TurnSignalLeft = (dpadX < -0.5f) || UnityEngine.Input.GetKeyDown(KeyCode.LeftBracket);
-            TurnSignalRight = (dpadX > 0.5f) || UnityEngine.Input.GetKeyDown(KeyCode.RightBracket);
-            HazardLights = (dpadY < -0.5f) || UnityEngine.Input.GetKeyDown(KeyCode.H);
-
-            LookLeft = dpadX < -0.7f || UnityEngine.Input.GetKey(KeyCode.Q);
-            LookRight = dpadX > 0.7f || UnityEngine.Input.GetKey(KeyCode.E);
+            LookLeft = UnityEngine.Input.GetKey(KeyCode.Q);
+            LookRight = UnityEngine.Input.GetKey(KeyCode.E) && !StarterIgnition;
             LookBehind = UnityEngine.Input.GetKey(KeyCode.JoystickButton8) || UnityEngine.Input.GetKey(KeyCode.B);
         }
 
+        private float ApplyPedalDeadzone(float v)
+        {
+            if (v < pedalDeadzone) return 0f;
+            return Mathf.Clamp01((v - pedalDeadzone) / (1f - pedalDeadzone));
+        }
+
+        private static float SafeAxisRaw(string axis)
+        {
+            try { return UnityEngine.Input.GetAxisRaw(axis); } catch (ArgumentException) { return 0f; }
+        }
+
+        private void ClearInputs()
+        {
+            Steering = 0f; Throttle = 0f; Brake = 0f; Clutch = 1f; Handbrake = true;
+            StarterIgnition = false; Horn = false; ChangeCameraView = false; ResetVehicle = false;
+            TurnSignalLeft = false; TurnSignalRight = false; HazardLights = false;
+            LookLeft = false; LookRight = false; LookBehind = false;
+        }
+
+        /// <summary>Reloads the saved wheel calibration (called by the setup wizard).</summary>
+        public void ReloadCalibration() { calibration = WheelCalibrationData.Load(); }
+
+        /// <summary>Opens the on-screen wheel and pedal setup.</summary>
+        public void OpenCalibration()
+        {
+            if (WheelCalibrationWizard.Instance == null) gameObject.AddComponent<WheelCalibrationWizard>();
+            WheelCalibrationWizard.Instance.Begin(detectedJoystickName);
+        }
         private int DetectHShifterGear()
         {
             // Logitech Driving Force Shifter gear slots:
