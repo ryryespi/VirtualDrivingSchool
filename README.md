@@ -95,6 +95,39 @@ You can also practice immediately without a steering wheel plugged in:
 
 ---
 
+## 🖥️ Graphics & Low-End PCs
+
+The simulator uses a clean, stylized **low-poly** look built to run smoothly on **Windows 10 laptops and desktops with integrated graphics** (Intel UHD/Iris Xe, AMD Vega).
+
+**Render pipeline:** Universal Render Pipeline (URP 17), Forward renderer, SRP Batcher on, linear color space.
+
+| Setting | **Low** (default) | **High** |
+| :--- | :--- | :--- |
+| Shadows | Hard, 1 cascade, 40 m, 1024 px | Soft (low quality), 2 cascades, 60 m, 2048 px |
+| Anti-aliasing | Off | 2× MSAA |
+| HDR | Off | On |
+| Post-processing | None | Mild bloom, neutral tonemapping, light color grading, soft vignette |
+| Mirror cameras | 256 px, alternate frames, no shadows | 512 px every frame, no shadows |
+| Draw distance | 320 m (with distance fog) | 450 m |
+| Render scale / VSync | 1.0 / on | 1.0 / on |
+
+- Press **F10** in game to switch between Low and High. The choice is saved on that computer.
+- Graphics settings live in `Assets/Settings/` (`VDS_URP_Low`, `VDS_URP_High`, `VDS_HighQuality_PostFX`), and the quality levels are trimmed to just **Low** and **High** (Project Settings → Quality).
+
+**Performance techniques**
+
+- All flat ground pieces (grass, asphalt, sidewalks, every painted line) are merged at runtime into **one mesh per material**.
+- Static scenery (houses, trees, fence, lamps, parked cars, curbs) is **static-batched** after the world is generated. Traffic cones stay dynamic so they can be knocked over.
+- Shared materials (URP Simple Lit; Lit only for car paint) with GPU instancing enabled, and no realtime point lights.
+- Typical frame: about **70k triangles and ~200 batches on Low**, or ~110k triangles on High.
+
+**3D art:** low-poly CC0 models by [Kenney](https://www.kenney.nl) (Car Kit, City Kit Roads, City Kit Suburban, Nature Kit). See `Assets/Art/CREDITS.md`.
+
+**Rebuilding the graphics setup:** run **Tools → Virtual Driving School → Setup Graphics (URP)**. It regenerates the textures and materials, remaps the Kenney model materials, rebuilds the URP Low/High assets and quality levels, writes `Assets/Resources/VDSArtLibrary.asset` (the list of models and materials the runtime builders use, so everything is included in builds), and applies the sky, ambient light, and fog to the open scene. It is safe to run again.
+
+**Tips for very weak PCs:** stay on Low, run in a window or at 1280×720, and plug laptops into power (Windows "Best performance" mode).
+
+---
 ## 🚀 How to Open in Unity
 
 1. Launch **Unity Hub**.
@@ -103,7 +136,7 @@ You can also practice immediately without a steering wheel plugged in:
    ```
    C:\Users\respi\.gemini\antigravity\scratch\VirtualDrivingSchool
    ```
-4. Open the project with **Unity 6 (6000.3.28f1)** or **Unity 2022.3 LTS**.
+4. Open the project with **Unity 6 (6000.3.28f1)**. It uses URP 17, so Unity 6 or newer is required.
 5. In the Project window, double-click:
    `Assets/Scenes/DrivingSchool_Main.unity`
 6. Click the **Play** button in Unity!
