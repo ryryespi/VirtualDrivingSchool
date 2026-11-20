@@ -128,6 +128,18 @@ The simulator uses a clean, stylized **low-poly** look built to run smoothly on 
 **Tips for very weak PCs:** stay on Low, run in a window or at 1280×720, and plug laptops into power (Windows "Best performance" mode).
 
 ---
+## 📦 Windows 10+ Installer
+
+A 64-bit setup program for Windows 10 and later (including low-end PCs) is defined in `installer/VirtualDrivingSchool.iss` and compiled with [Inno Setup 6](https://jrsoftware.org/isinfo.php).
+
+1. In the Unity editor, choose **Tools → Virtual Driving School → Build Windows Release Player**. That writes a non-development Windows x64 player to `Builds/Release/VirtualDrivingSchool.exe` (DirectX 11 first, Low quality default). You can also trigger the same build by creating an empty file at `Builds/Release/START_BUILD.txt`.
+2. Compile `installer/VirtualDrivingSchool.iss`. The setup exe is written to `Builds/Installer/VirtualDrivingSchool-Setup-1.0.0.exe`.
+
+The installer is per-user by default (no administrator account required; you can still choose an all-users folder). It adds a Start Menu shortcut, an optional desktop shortcut, a launch-after-install checkbox, and an uninstaller.
+
+It is not code-signed, so Windows SmartScreen may show a warning. Choose **More info**, then **Run anyway**. A Logitech G920 wheel and pedals are optional; keyboard and gamepad also work. If you use a Logitech wheel, install **Logitech G HUB** first so Windows can see it, then run the in-game calibration wizard.
+
+---
 ## 🚀 How to Open in Unity
 
 1. Launch **Unity Hub**.
